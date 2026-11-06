@@ -7,7 +7,7 @@
 
 <div style="max-width:900px; margin:auto;">
 
-    <a href="{{ route('events.index') }}"
+    <a href="{{ route('events.index', ['organization' => $organization->slug]) }}"
        style="display:inline-block; margin-bottom:20px; color:#2563EB; text-decoration:none; font-size:14px;">
         &larr; Kembali ke daftar acara
     </a>
@@ -40,7 +40,7 @@
 
         </div>
 
-        <form action="{{ route('events.update', $event->id) }}"
+        <form action="{{ route('events.update', ['organization' => $organization->slug, 'event' => $event->id]) }}"
               method="POST"
               style="padding:24px;">
 
@@ -193,7 +193,7 @@
 
             <div style="display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; border-top:1px solid #E2E8F0; padding-top:20px;">
 
-                <a href="{{ route('events.index') }}"
+                <a href="{{ route('events.index', ['organization' => $organization->slug]) }}"
                    style="padding:10px 18px; border:1px solid #CBD5E1; border-radius:7px; color:#475569; text-decoration:none; font-size:14px;">
                     Kembali
                 </a>

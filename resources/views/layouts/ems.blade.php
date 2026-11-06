@@ -136,7 +136,7 @@
         </a>
 
         @if (!$isVendor)
-            <a href="{{ route('events.index') }}"
+            <a href="{{ route('events.index', ['organization' => $currentOrganization->slug]) }}"
                class="ems-menu {{ request()->routeIs('events.*') ? 'active' : '' }}">
                 ◈ &nbsp; Kelola Acara
             </a>
@@ -173,7 +173,7 @@
 
             @endif
 
-            <a href="{{ route('event-equipment.index') }}"
+            <a href="{{ route('event-equipment.index', ['organization' => $currentOrganization->slug]) }}"
                class="ems-menu {{ request()->routeIs('event-equipment.*') ? 'active' : '' }}">
                 ▧ &nbsp; Penugasan Peralatan
             </a>

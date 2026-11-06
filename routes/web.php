@@ -19,7 +19,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationInvitationController;
 
-use App\Models\Organization;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -28,12 +27,12 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
 
-    // Dashboard dapat diakses semua role yang sudah login.
+    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('verified')
         ->name('dashboard');
 
-    // Profil dapat diakses semua role.
+    // Profil
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
 
@@ -43,7 +42,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
 
-    // ADMIN DAN STAF OPERASIONAL
+
+    // ==========================================
+    // MODUL GLOBAL (BELUM DIMIGRASIKAN)
+    // ==========================================
+
     Route::middleware('role:Admin,Staf Operasional')->group(function () {
 
         // User Management
@@ -61,8 +64,9 @@ Route::middleware('auth')->group(function () {
 
         Route::put('/users/{user}', [UserController::class, 'update'])
             ->name('users.update');
-            
-        // Kelola Konsep Acara
+
+
+        // Konsep Acara
         Route::get('/event-concepts', [EventConceptController::class, 'index'])
             ->name('event-concepts.index');
 
@@ -77,22 +81,6 @@ Route::middleware('auth')->group(function () {
 
         Route::put('/event-concepts/{eventConcept}', [EventConceptController::class, 'update'])
             ->name('event-concepts.update');
-
-        // Pengelolaan Acara
-        Route::get('/events', [EventController::class, 'index'])
-            ->name('events.index');
-
-        Route::get('/events/create', [EventController::class, 'create'])
-            ->name('events.create');
-
-        Route::post('/events', [EventController::class, 'store'])
-            ->name('events.store');
-
-        Route::get('/events/{event}/edit', [EventController::class, 'edit'])
-            ->name('events.edit');
-
-        Route::put('/events/{event}', [EventController::class, 'update'])
-            ->name('events.update');
 
 
         // Rundown
@@ -115,22 +103,6 @@ Route::middleware('auth')->group(function () {
             ->name('rundowns.publish');
 
 
-        // Event Equipment
-        Route::get('/event-equipment', [EventEquipmentController::class, 'index'])
-            ->name('event-equipment.index');
-
-        Route::get('/event-equipment/create', [EventEquipmentController::class, 'create'])
-            ->name('event-equipment.create');
-
-        Route::post('/event-equipment', [EventEquipmentController::class, 'store'])
-            ->name('event-equipment.store');
-
-        Route::get('/event-equipment/{eventEquipment}/edit', [EventEquipmentController::class, 'edit'])
-            ->name('event-equipment.edit');
-
-        Route::put('/event-equipment/{eventEquipment}', [EventEquipmentController::class, 'update'])
-            ->name('event-equipment.update');
-
         // Vendors
         Route::get('/vendors', [VendorController::class, 'index'])
             ->name('vendors.index');
@@ -147,6 +119,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/vendors/{vendor}', [VendorController::class, 'update'])
             ->name('vendors.update');
 
+
         // Event Vendor
         Route::get('/event-vendors', [EventVendorController::class, 'index'])
             ->name('event-vendors.index');
@@ -162,6 +135,7 @@ Route::middleware('auth')->group(function () {
 
         Route::put('/event-vendors/{eventVendor}', [EventVendorController::class, 'update'])
             ->name('event-vendors.update');
+
 
         // Evaluasi
         Route::get('/evaluations', [EvaluationController::class, 'index'])
@@ -180,8 +154,11 @@ Route::middleware('auth')->group(function () {
             ->name('evaluations.update');
     });
 
-    // ADMIN, STAF OPERASIONAL, DAN VENDOR
-    // Data milik Vendor dibatasi lagi oleh VendorConfirmationController.
+
+    // ==========================================
+    // KONFIRMASI VENDOR (GLOBAL, BELUM DIMIGRASIKAN)
+    // ==========================================
+
     Route::middleware('role:Admin,Staf Operasional,Vendor')->group(function () {
 
         Route::get('/vendor-confirmations', [VendorConfirmationController::class, 'index'])
@@ -200,108 +177,159 @@ Route::middleware('auth')->group(function () {
             ->name('vendor-confirmations.update');
     });
 
-    // KHUSUS ADMIN
+
+    // ==========================================
+    // LAPORAN
+    // ==========================================
+
     Route::middleware('role:Admin')->group(function () {
 
         Route::get('/reports', [ReportController::class, 'index'])
             ->name('reports.index');
     });
 
-    Route::middleware('auth')->group(function () {
-        Route::get('/organizations', [OrganizationController::class, 'index'])
-            ->name('organizations.index');
 
-        Route::get('/organizations/create', [OrganizationController::class, 'create'])
-            ->name('organizations.create');
+    // ==========================================
+    // ORGANISASI
+    // ==========================================
 
-        Route::post('/organizations', [OrganizationController::class, 'store'])
-            ->name('organizations.store');
+    Route::get('/organizations', [OrganizationController::class, 'index'])
+        ->name('organizations.index');
 
-        
-        Route::prefix('/o/{organization:slug}')
-            ->middleware('organization.member')
-            ->scopeBindings()
-            ->group(function () {
+    Route::get('/organizations/create', [OrganizationController::class, 'create'])
+        ->name('organizations.create');
 
-                // Halaman utama organisasi
-                Route::get('/', [OrganizationController::class, 'workspace'])
-                    ->name('organizations.workspace');
-
-                // Fitur untuk Admin dan Staf Operasional organisasi
-                Route::middleware('organization.role:Admin,Staf Operasional')
-                    ->group(function () {
-
-                        // Venue
-                        Route::get('/venues', [VenueController::class, 'index'])
-                            ->name('venues.index');
-
-                        Route::get('/venues/create', [VenueController::class, 'create'])
-                            ->name('venues.create');
-
-                        Route::post('/venues', [VenueController::class, 'store'])
-                            ->name('venues.store');
-
-                        Route::get('/venues/{venue}/edit', [VenueController::class, 'edit'])
-                            ->name('venues.edit');
-
-                        Route::put('/venues/{venue}', [VenueController::class, 'update'])
-                            ->name('venues.update');
+    Route::post('/organizations', [OrganizationController::class, 'store'])
+        ->name('organizations.store');
 
 
-                        // Equipment
-                        Route::get('/equipment', [EquipmentController::class, 'index'])
-                            ->name('equipment.index');
+    // Semua fitur di bawah ini dibatasi berdasarkan organisasi.
+    Route::prefix('/o/{organization:slug}')
+        ->middleware('organization.member')
+        ->scopeBindings()
+        ->group(function () {
 
-                        Route::get('/equipment/create', [EquipmentController::class, 'create'])
-                            ->name('equipment.create');
-
-                        Route::post('/equipment', [EquipmentController::class, 'store'])
-                            ->name('equipment.store');
-
-                        Route::get('/equipment/{equipment}/edit', [EquipmentController::class, 'edit'])
-                            ->name('equipment.edit');
-
-                        Route::put('/equipment/{equipment}', [EquipmentController::class, 'update'])
-                            ->name('equipment.update');
+            // Workspace organisasi
+            Route::get('/', [OrganizationController::class, 'workspace'])
+                ->name('organizations.workspace');
 
 
-                        // Equipment Categories
-                        Route::get('/equipment-categories', [EquipmentCategoryController::class, 'index'])
-                            ->name('equipment-categories.index');
+            // ==========================================
+            // FITUR ADMIN DAN STAF OPERASIONAL ORGANISASI
+            // ==========================================
 
-                        Route::get('/equipment-categories/create', [EquipmentCategoryController::class, 'create'])
-                            ->name('equipment-categories.create');
+            Route::middleware('organization.role:Admin,Staf Operasional')
+                ->group(function () {
 
-                        Route::post('/equipment-categories', [EquipmentCategoryController::class, 'store'])
-                            ->name('equipment-categories.store');
+                    // Venue
+                    Route::get('/venues', [VenueController::class, 'index'])
+                        ->name('venues.index');
 
-                        Route::get('/equipment-categories/{equipmentCategory}/edit', [EquipmentCategoryController::class, 'edit'])
-                            ->name('equipment-categories.edit');
+                    Route::get('/venues/create', [VenueController::class, 'create'])
+                        ->name('venues.create');
 
-                        Route::put('/equipment-categories/{equipmentCategory}', [EquipmentCategoryController::class, 'update'])
-                            ->name('equipment-categories.update');
-                    });
-            });
+                    Route::post('/venues', [VenueController::class, 'store'])
+                        ->name('venues.store');
 
-        Route::post(
-            '/o/{organization:slug}/invitations',
-            [OrganizationInvitationController::class, 'store']
-        )->middleware([
-            'organization.member',
-            'organization.role:Admin',
-        ])->name('organizations.invitations.store');
+                    Route::get('/venues/{venue}/edit', [VenueController::class, 'edit'])
+                        ->name('venues.edit');
 
-        Route::get(
-            '/invitations/{token}',
-            [OrganizationInvitationController::class, 'show']
-        )->name('invitations.accept');
+                    Route::put('/venues/{venue}', [VenueController::class, 'update'])
+                        ->name('venues.update');
 
-        Route::post(
-            '/invitations/{token}',
-            [OrganizationInvitationController::class, 'accept']
-        )->name('invitations.accept.submit');
-    });
-    
+
+                    // Pengelolaan Acara
+                    Route::get('/events', [EventController::class, 'index'])
+                        ->name('events.index');
+
+                    Route::get('/events/create', [EventController::class, 'create'])
+                        ->name('events.create');
+
+                    Route::post('/events', [EventController::class, 'store'])
+                        ->name('events.store');
+
+                    Route::get('/events/{event}/edit', [EventController::class, 'edit'])
+                        ->name('events.edit');
+
+                    Route::put('/events/{event}', [EventController::class, 'update'])
+                        ->name('events.update');
+
+
+                    // Equipment
+                    Route::get('/equipment', [EquipmentController::class, 'index'])
+                        ->name('equipment.index');
+
+                    Route::get('/equipment/create', [EquipmentController::class, 'create'])
+                        ->name('equipment.create');
+
+                    Route::post('/equipment', [EquipmentController::class, 'store'])
+                        ->name('equipment.store');
+
+                    Route::get('/equipment/{equipment}/edit', [EquipmentController::class, 'edit'])
+                        ->name('equipment.edit');
+
+                    Route::put('/equipment/{equipment}', [EquipmentController::class, 'update'])
+                        ->name('equipment.update');
+
+
+                    // Equipment Categories
+                    Route::get('/equipment-categories', [EquipmentCategoryController::class, 'index'])
+                        ->name('equipment-categories.index');
+
+                    Route::get('/equipment-categories/create', [EquipmentCategoryController::class, 'create'])
+                        ->name('equipment-categories.create');
+
+                    Route::post('/equipment-categories', [EquipmentCategoryController::class, 'store'])
+                        ->name('equipment-categories.store');
+
+                    Route::get('/equipment-categories/{equipmentCategory}/edit', [EquipmentCategoryController::class, 'edit'])
+                        ->name('equipment-categories.edit');
+
+                    Route::put('/equipment-categories/{equipmentCategory}', [EquipmentCategoryController::class, 'update'])
+                        ->name('equipment-categories.update');
+
+
+                    // Penugasan Peralatan Acara
+                    Route::get('/event-equipment', [EventEquipmentController::class, 'index'])
+                        ->name('event-equipment.index');
+
+                    Route::get('/event-equipment/create', [EventEquipmentController::class, 'create'])
+                        ->name('event-equipment.create');
+
+                    Route::post('/event-equipment', [EventEquipmentController::class, 'store'])
+                        ->name('event-equipment.store');
+
+                    Route::get('/event-equipment/{eventEquipment}/edit', [EventEquipmentController::class, 'edit'])
+                        ->name('event-equipment.edit');
+
+                    Route::put('/event-equipment/{eventEquipment}', [EventEquipmentController::class, 'update'])
+                        ->name('event-equipment.update');
+                });
+        });
+
+
+    // ==========================================
+    // UNDANGAN ORGANISASI
+    // ==========================================
+
+    Route::post(
+        '/o/{organization:slug}/invitations',
+        [OrganizationInvitationController::class, 'store']
+    )->middleware([
+        'organization.member',
+        'organization.role:Admin',
+    ])->name('organizations.invitations.store');
+
+    Route::get(
+        '/invitations/{token}',
+        [OrganizationInvitationController::class, 'show']
+    )->name('invitations.accept');
+
+    Route::post(
+        '/invitations/{token}',
+        [OrganizationInvitationController::class, 'accept']
+    )->name('invitations.accept.submit');
+
 });
 
 require __DIR__.'/auth.php';

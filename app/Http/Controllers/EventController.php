@@ -3,31 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
-use App\Models\Venue;
+use App\Models\Organization;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class EventController extends Controller
 {
-    // Menampilkan daftar acara
-    public function index()
+    public function index(Organization $organization)
     {
-        $events = Event::with('venue')
+        $events = $organization->events()
+            ->with('venue')
             ->orderBy('start_datetime')
             ->get();
 
-        return view('events.index', compact('events'));
+        return view('events.index', compact('events', 'organization'));
     }
 
-    // Menampilkan form pembuatan acara
-    public function create()
+    public function create(Organization $organization)
     {
-        $venues = Venue::orderBy('venue_name')->get();
+        $venues = $organization->venues()
+            ->orderBy('venue_name')
+            ->get();
 
-        return view('events.create', compact('venues'));
+        return view('events.create', compact('venues', 'organization'));
     }
 
-    // Menyimpan acara baru
-    public function store(Request $request)
+    public function store(Request $request, Organization $organization)
     {
         $validated = $request->validate([
             'event_name' => ['required', 'string', 'max:150'],
@@ -40,35 +41,44 @@ class EventController extends Controller
             'status' => [
                 'required',
                 'string',
-                'max:30',
-                'in:Planning,Ongoing,Completed,Cancelled',
+                Rule::in(['Planning', 'Ongoing', 'Completed', 'Cancelled']),
             ],
             'venue_id' => [
                 'nullable',
-                'exists:venues,id',
+                Rule::exists('venues', 'id')
+                    ->where('organization_id', $organization->id),
             ],
         ]);
 
         $validated['created_by'] = auth()->id();
 
-        Event::create($validated);
+        $organization->events()->create($validated);
 
         return redirect()
-            ->route('events.index')
+            ->route('events.index', [
+                'organization' => $organization->slug,
+            ])
             ->with('success', 'Acara berhasil dibuat.');
     }
 
-    // Menampilkan form edit acara
-    public function edit(Event $event)
+    public function edit(Organization $organization, Event $event)
     {
-        $venues = Venue::orderBy('venue_name')->get();
+        $venues = $organization->venues()
+            ->orderBy('venue_name')
+            ->get();
 
-        return view('events.edit', compact('event', 'venues'));
+        return view('events.edit', compact(
+            'event',
+            'venues',
+            'organization'
+        ));
     }
 
-    // Memperbarui acara
-    public function update(Request $request, Event $event)
-    {
+    public function update(
+        Request $request,
+        Organization $organization,
+        Event $event
+    ) {
         $validated = $request->validate([
             'event_name' => ['required', 'string', 'max:150'],
             'start_datetime' => ['required', 'date'],
@@ -80,19 +90,21 @@ class EventController extends Controller
             'status' => [
                 'required',
                 'string',
-                'max:30',
-                'in:Planning,Ongoing,Completed,Cancelled',
+                Rule::in(['Planning', 'Ongoing', 'Completed', 'Cancelled']),
             ],
             'venue_id' => [
                 'nullable',
-                'exists:venues,id',
+                Rule::exists('venues', 'id')
+                    ->where('organization_id', $organization->id),
             ],
         ]);
 
         $event->update($validated);
 
         return redirect()
-            ->route('events.index')
+            ->route('events.index', [
+                'organization' => $organization->slug,
+            ])
             ->with('success', 'Data acara berhasil diperbarui.');
     }
 }

@@ -1,3 +1,4 @@
+
 @extends('layouts.ems')
 
 @section('title', 'Tambah Penugasan Peralatan')
@@ -18,7 +19,7 @@
 
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px;">
 
-        <form action="{{ route('event-equipment.store') }}" method="POST">
+        <form action="{{ route('event-equipment.store', ['organization' => $organization->slug]) }}" method="POST">
             @csrf
 
             <div style="margin-bottom: 18px;">
@@ -49,7 +50,7 @@
 
                     @foreach ($equipment as $item)
                         <option value="{{ $item->id }}" {{ old('equipment_id') == $item->id ? 'selected' : '' }}>
-                            {{ $item->equipment_name }} — {{ $item->category->category_name }} ({{ $item->asset_code }})
+                            {{ $item->equipment_name }} - {{ $item->category->category_name ?? '-' }} ({{ $item->asset_code }})
                         </option>
                     @endforeach
                 </select>
@@ -73,6 +74,7 @@
 
                 <select name="usage_status" required
                     style="display: block; width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 7px;">
+
                     <option value="Planned" {{ old('usage_status', 'Planned') == 'Planned' ? 'selected' : '' }}>
                         Direncanakan
                     </option>
@@ -102,7 +104,7 @@
                     Simpan Penugasan
                 </button>
 
-                <a href="{{ route('event-equipment.index') }}"
+                <a href="{{ route('event-equipment.index', ['organization' => $organization->slug]) }}"
                     style="color: #475569; text-decoration: none; padding: 11px 14px;">
                     Batal
                 </a>
