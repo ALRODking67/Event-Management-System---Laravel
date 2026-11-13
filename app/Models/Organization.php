@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Organization extends Model
 {
@@ -47,5 +48,34 @@ class Organization extends Model
     public function equipment(): HasMany
     {
         return $this->hasMany(Equipment::class);
+    }
+
+    public function vendors(): HasMany
+    {
+        return $this->hasMany(Vendor::class);
+    }
+
+    public function eventVendors(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            EventVendor::class,
+            Event::class,
+            'organization_id',
+            'event_id',
+            'id',
+            'id'
+        );
+    }
+
+    public function evaluations(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Evaluation::class,
+            Event::class,
+            'organization_id',
+            'event_id',
+            'id',
+            'id'
+        );
     }
 }

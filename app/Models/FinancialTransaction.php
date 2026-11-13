@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class FinancialTransaction extends Model
 {
     protected $fillable = [
+        'organization_id',
         'event_id',
         'transaction_type',
         'description',
         'amount',
         'transaction_date',
         'recorded_by',
+        'vendor_payment_id',
     ];
 
     protected function casts(): array
@@ -24,13 +26,23 @@ class FinancialTransaction extends Model
         ];
     }
 
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     public function event(): BelongsTo
     {
-        return $this->belongsTo(Event::class, 'event_id');
+        return $this->belongsTo(Event::class);
     }
 
     public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function vendorPayment(): BelongsTo
+    {
+        return $this->belongsTo(EventVendorPayment::class, 'vendor_payment_id');
     }
 }

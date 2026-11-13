@@ -13,7 +13,7 @@
     @endif
 
     <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-        <a href="{{ route('rundowns.create') }}"
+        <a href="{{ route('rundowns.create', ['organization' => $currentOrganization->slug]) }}"
            style="display: inline-block; background: #2563eb; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
             + Tambah Rundown
         </a>
@@ -70,7 +70,7 @@
 
                                     <td style="padding: 12px; min-width: 150px;">
 
-                                        <a href="{{ route('rundowns.edit', $item->id) }}"
+                                        <a href="{{ route('rundowns.edit', ['organization' => $currentOrganization->slug, 'rundown' => $item->id]) }}"
                                            style="display: inline-block; color: #2563eb; text-decoration: none; font-weight: 600; margin-bottom: 10px;">
                                             Edit
                                         </a>
@@ -86,7 +86,7 @@
                                                 </span>
                                             @endif
 
-                                            <form action="{{ route('rundowns.publish', $item->id) }}"
+                                            <form action="{{ route('rundowns.publish', ['organization' => $currentOrganization->slug, 'rundown' => $item->id]) }}"
                                                   method="POST"
                                                   onsubmit="return confirm('Yakin ingin mengubah status publikasi rundown ini?');">
 

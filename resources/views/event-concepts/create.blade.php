@@ -7,7 +7,7 @@
 
 <div style="max-width:950px; margin:auto;">
 
-    <a href="{{ route('event-concepts.index') }}"
+    <a href="{{ route('event-concepts.index', ['organization' => $currentOrganization->slug]) }}"
        style="display:inline-block; margin-bottom:20px; color:#2563EB; text-decoration:none; font-size:14px;">
         &larr; Kembali ke daftar konsep
     </a>
@@ -45,7 +45,7 @@
                 modul pengelolaan acara.
             </p>
 
-            <a href="{{ route('event-concepts.index') }}"
+            <a href="{{ route('event-concepts.index', ['organization' => $currentOrganization->slug]) }}"
                style="display:inline-block; margin-top:18px; background:white; color:#92400E; padding:10px 16px; border:1px solid #FCD34D; border-radius:7px; text-decoration:none; font-size:14px;">
                 Kembali ke Daftar Konsep
             </a>
@@ -69,7 +69,7 @@
 
             </div>
 
-            <form action="{{ route('event-concepts.store') }}"
+            <form action="{{ route('event-concepts.store', ['organization' => $currentOrganization->slug]) }}"
                   method="POST"
                   style="padding:24px;">
 
@@ -215,7 +215,7 @@
 
                 <div style="display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; border-top:1px solid #E2E8F0; padding-top:20px;">
 
-                    <a href="{{ route('event-concepts.index') }}"
+                    <a href="{{ route('event-concepts.index', ['organization' => $currentOrganization->slug]) }}"
                        style="padding:10px 18px; border:1px solid #CBD5E1; border-radius:7px; color:#475569; text-decoration:none; font-size:14px;">
                         Batal
                     </a>

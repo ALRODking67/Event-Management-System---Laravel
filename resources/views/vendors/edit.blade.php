@@ -18,7 +18,10 @@
 
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px;">
 
-        <form action="{{ route('vendors.update', $vendor->id) }}" method="POST">
+        <form action="{{ route('vendors.update', [
+            'organization' => $currentOrganization->slug,
+            'vendor' => $vendor->id
+        ]) }}" method="POST">
             @csrf
             @method('PUT')
 
@@ -98,7 +101,7 @@
                 </button>
 
                 <a
-                    href="{{ route('vendors.index') }}"
+                    href="{{ route('vendors.index', ['organization' => $currentOrganization->slug]) }}"
                     style="color: #475569; text-decoration: none; padding: 11px 14px;"
                 >
                     Batal

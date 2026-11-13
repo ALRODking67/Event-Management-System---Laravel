@@ -4,38 +4,39 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\EventConcept;
+use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class EventConceptController extends Controller
 {
-    // Menampilkan daftar acara dan konsepnya
-    public function index()
+    public function index(Organization $organization)
     {
-        $events = Event::with(['concept', 'venue'])
+        $events = $organization->events()
+            ->with(['concept', 'venue'])
             ->orderBy('start_datetime')
             ->get();
 
         return view('event-concepts.index', compact('events'));
     }
 
-    // Menampilkan form pembuatan konsep
-    public function create()
+    public function create(Organization $organization)
     {
-        $events = Event::whereDoesntHave('concept')
+        $events = $organization->events()
+            ->whereDoesntHave('concept')
             ->orderBy('start_datetime')
             ->get();
 
         return view('event-concepts.create', compact('events'));
     }
 
-    // Menyimpan konsep baru
-    public function store(Request $request)
+    public function store(Request $request, Organization $organization)
     {
         $validated = $request->validate([
             'event_id' => [
                 'required',
-                'exists:events,id',
+                Rule::exists('events', 'id')
+                    ->where('organization_id', $organization->id),
                 Rule::unique('event_concepts', 'event_id'),
             ],
             'purpose' => ['nullable', 'string'],
@@ -47,23 +48,37 @@ class EventConceptController extends Controller
         EventConcept::create($validated);
 
         return redirect()
-            ->route('event-concepts.index')
+            ->route('event-concepts.index', [
+                'organization' => $organization->slug,
+            ])
             ->with('success', 'Konsep acara berhasil disimpan.');
     }
 
-    // Menampilkan form edit konsep
-    public function edit(EventConcept $eventConcept)
-    {
-        $eventConcept->load('event');
+    public function edit(
+        Organization $organization,
+        int $eventConcept
+    ) {
+        $eventConcept = EventConcept::whereKey($eventConcept)
+            ->whereHas('event', function ($query) use ($organization) {
+                $query->where('organization_id', $organization->id);
+            })
+            ->with('event')
+            ->firstOrFail();
 
         return view('event-concepts.edit', compact('eventConcept'));
     }
 
-    // Memperbarui konsep
     public function update(
         Request $request,
-        EventConcept $eventConcept
+        Organization $organization,
+        int $eventConcept
     ) {
+        $eventConcept = EventConcept::whereKey($eventConcept)
+            ->whereHas('event', function ($query) use ($organization) {
+                $query->where('organization_id', $organization->id);
+            })
+            ->firstOrFail();
+
         $validated = $request->validate([
             'purpose' => ['nullable', 'string'],
             'theme' => ['required', 'string', 'max:150'],
@@ -74,7 +89,9 @@ class EventConceptController extends Controller
         $eventConcept->update($validated);
 
         return redirect()
-            ->route('event-concepts.index')
+            ->route('event-concepts.index', [
+                'organization' => $organization->slug,
+            ])
             ->with('success', 'Konsep acara berhasil diperbarui.');
     }
 }

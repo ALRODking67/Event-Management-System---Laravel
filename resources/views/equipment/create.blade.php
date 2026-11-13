@@ -117,7 +117,7 @@
         </div>
     @endif
 
-    <form action="{{ route('equipment.store') }}" method="POST">
+    <form action="{{ route('equipment.store', ['organization' => $currentOrganization->slug]) }}" method="POST">
         @csrf
 
         <div class="equipment-field">
@@ -214,7 +214,7 @@
                 Simpan Peralatan
             </button>
 
-            <a href="{{ route('equipment.index') }}" class="equipment-cancel">
+            <a href="{{ route('equipment.index', ['organization' => $currentOrganization->slug]) }}" class="equipment-cancel">
                 Batal
             </a>
         </div>

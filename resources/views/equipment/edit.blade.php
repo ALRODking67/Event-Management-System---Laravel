@@ -28,7 +28,7 @@
             </div>
         @endif
 
-        <form action="{{ route('equipment.update', $equipment->id) }}" method="POST">
+        <form action="{{ route('equipment.update', ['organization' => $currentOrganization->slug, 'equipment' => $equipment->id]) }}" method="POST">
             @csrf
             @method('PUT')
 
@@ -153,7 +153,7 @@
                 </button>
 
                 <a
-                    href="{{ route('equipment.index') }}"
+                    href="{{ route('equipment.index', ['organization' => $currentOrganization->slug]) }}"
                     style="display: inline-block; color: #475569; text-decoration: none; padding: 11px 16px; border: 1px solid #cbd5e1; border-radius: 7px;"
                 >
                     Batal

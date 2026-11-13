@@ -138,7 +138,7 @@
             </p>
         </div>
 
-        <a href="{{ route('venues.create') }}" class="venue-button">
+        <a href="{{ route('venues.create', ['organization' => $currentOrganization->slug]) }}" class="venue-button">
             + Tambah Venue
         </a>
     </div>
@@ -158,7 +158,7 @@
                 Tambahkan venue untuk digunakan dalam penyelenggaraan acara.
             </p>
 
-            <a href="{{ route('venues.create') }}">
+            <a href="{{ route('venues.create', ['organization' => $currentOrganization->slug]) }}">
                 Tambah venue pertama
             </a>
         </div>
@@ -196,7 +196,7 @@
 
                             <td>
                                 <a
-                                    href="{{ route('venues.edit', $venue->id) }}"
+                                    href="{{ route('venues.edit', ['organization' => $currentOrganization->slug, 'venue' => $venue->id]) }}"
                                     class="venue-edit"
                                 >
                                     Edit

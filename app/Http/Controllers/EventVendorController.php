@@ -4,46 +4,57 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\EventVendor;
+use App\Models\Organization;
 use App\Models\Vendor;
+use App\Models\EventVendorOffer;
+use App\Models\OrganizationMember;
+use App\Notifications\EventVendorDecisionNotification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class EventVendorController extends Controller
 {
-    public function index()
+    public function index(Organization $organization)
     {
-        $events = Event::with([
-            'vendorAssignments.vendor',
-            'vendorAssignments.confirmations' => function ($query) {
-                $query->orderByDesc('confirmed_at')
-                    ->orderByDesc('id');
-            },
-        ])
+        // Halaman utama penugasan vendor menggunakan
+        // halaman Vendor Confirmation yang sudah terintegrasi.
+        return redirect()->route('vendor-confirmations.index', [
+            'organization' => $organization->slug,
+        ]);
+    }
+
+    public function create(Organization $organization)
+    {
+        $events = $organization->events()
             ->orderBy('start_datetime')
             ->get();
 
-        return view('event-vendors.index', compact('events'));
+        $vendors = $organization->vendors()
+            ->orderBy('vendor_name')
+            ->get();
+
+        return view('event-vendors.create', compact(
+            'events',
+            'vendors',
+            'organization'
+        ));
     }
 
-    public function create()
-    {
-        $events = Event::orderBy('start_datetime')->get();
-        $vendors = Vendor::orderBy('vendor_name')->get();
-
-        return view('event-vendors.create', compact('events', 'vendors'));
-    }
-
-    public function store(Request $request)
+    
+    public function store(Request $request, Organization $organization)
     {
         $validated = $request->validate([
             'event_id' => [
                 'required',
-                'exists:events,id',
+                Rule::exists('events', 'id')
+                    ->where('organization_id', $organization->id),
             ],
             'vendor_id' => [
                 'required',
-                'exists:vendors,id',
+                Rule::exists('vendors', 'id')
+                    ->where('organization_id', $organization->id),
             ],
             'service_description' => [
                 'required',
@@ -56,18 +67,79 @@ class EventVendorController extends Controller
             ],
         ]);
 
-        // Setiap penugasan baru selalu menunggu jawaban Vendor.
-        $validated['assignment_status'] = 'Requested';
+        // Buat penugasan dan penawaran awal dalam satu transaksi.
+        $eventVendor = DB::transaction(function () use ($validated) {
 
-        EventVendor::create($validated);
+            $eventVendor = EventVendor::create([
+                'event_id' => $validated['event_id'],
+                'vendor_id' => $validated['vendor_id'],
+                'service_description' => $validated['service_description'],
+                'agreed_cost' => $validated['agreed_cost'],
+                'assignment_status' => 'Requested',
+            ]);
+
+            EventVendorOffer::create([
+                'event_vendor_id' => $eventVendor->id,
+                'offered_by_user_id' => auth()->id(),
+                'offer_type' => 'initial',
+                'amount' => $validated['agreed_cost'],
+                'scope_description' => $validated['service_description'],
+                'status' => 'Pending',
+            ]);
+
+            return $eventVendor;
+        });
+
+        // Ambil informasi acara untuk isi notifikasi.
+        $eventVendor->load(['event', 'vendor']);
+
+        // Cari akun Vendor yang terhubung dengan Vendor tujuan
+        // di organisasi aktif.
+        $vendorMembers = OrganizationMember::with('user', 'role')
+            ->where('organization_id', $organization->id)
+            ->where('vendor_id', $eventVendor->vendor_id)
+            ->whereHas('role', function ($query) {
+                $query->where('role_name', 'Vendor');
+            })
+            ->get();
+
+        $url = route('vendor-negotiations.show', [
+            'organization' => $organization->slug,
+            'eventVendor' => $eventVendor->id,
+        ]);
+
+        // Kirim notifikasi kepada seluruh akun Vendor terkait.
+        foreach ($vendorMembers as $member) {
+            if ($member->user) {
+                $member->user->notify(
+                    new EventVendorDecisionNotification(
+                        'Permintaan Pekerjaan Baru',
+                        'Anda menerima permintaan pekerjaan untuk acara "' .
+                            ($eventVendor->event->event_name ?? '-') .
+                            '". Silakan periksa detail dan berikan tanggapan.',
+                        $url,
+                        (int) $organization->id,
+                        'vendor_negotiation'
+                    )
+                );
+            }
+        }
 
         return redirect()
-            ->route('event-vendors.index')
-            ->with('success', 'Penugasan vendor berhasil ditambahkan.');
+            ->route('vendor-confirmations.index', [
+                'organization' => $organization->slug,
+            ])
+            ->with(
+                'success',
+                'Penugasan berhasil dibuat dan notifikasi telah dikirim kepada Vendor.'
+            );
     }
 
-    public function edit(EventVendor $eventVendor)
-    {
+
+    public function edit(
+        Organization $organization,
+        EventVendor $eventVendor
+    ) {
         $eventVendor->load([
             'event',
             'vendor',
@@ -77,26 +149,37 @@ class EventVendorController extends Controller
             },
         ]);
 
-        $events = Event::orderBy('start_datetime')->get();
-        $vendors = Vendor::orderBy('vendor_name')->get();
+        $events = $organization->events()
+            ->orderBy('start_datetime')
+            ->get();
+
+        $vendors = $organization->vendors()
+            ->orderBy('vendor_name')
+            ->get();
 
         return view('event-vendors.edit', compact(
             'eventVendor',
             'events',
-            'vendors'
+            'vendors',
+            'organization'
         ));
     }
 
-    public function update(Request $request, EventVendor $eventVendor)
-    {
+    public function update(
+        Request $request,
+        Organization $organization,
+        EventVendor $eventVendor
+    ) {
         $validated = $request->validate([
             'event_id' => [
                 'required',
-                'exists:events,id',
+                Rule::exists('events', 'id')
+                    ->where('organization_id', $organization->id),
             ],
             'vendor_id' => [
                 'required',
-                'exists:vendors,id',
+                Rule::exists('vendors', 'id')
+                    ->where('organization_id', $organization->id),
             ],
             'service_description' => [
                 'required',
@@ -118,6 +201,11 @@ class EventVendorController extends Controller
             ],
         ]);
 
+        $latestConfirmation = $eventVendor->confirmations()
+            ->orderByDesc('confirmed_at')
+            ->orderByDesc('id')
+            ->first();
+
         $hasConfirmations = $eventVendor->confirmations()->exists();
 
         // Penugasan yang memiliki riwayat konfirmasi tidak boleh
@@ -134,25 +222,17 @@ class EventVendorController extends Controller
             ]);
         }
 
-        $latestConfirmation = $eventVendor->confirmations()
-            ->orderByDesc('confirmed_at')
-            ->orderByDesc('id')
-            ->first();
-
         $newStatus = $validated['assignment_status'];
 
         // Penugasan yang sudah dijawab tidak boleh dikembalikan
-        // menjadi Requested melalui form edit.
-        if (
-            $latestConfirmation &&
-            $newStatus === 'Requested'
-        ) {
+        // menjadi Requested.
+        if ($latestConfirmation && $newStatus === 'Requested') {
             throw ValidationException::withMessages([
                 'assignment_status' => 'Penugasan yang sudah memiliki jawaban Vendor tidak dapat dikembalikan ke Requested.',
             ]);
         }
 
-        // Vendor harus menjawab tersedia sebelum penugasan disetujui.
+        // Vendor harus menjawab Available sebelum penugasan disetujui.
         if (
             in_array($newStatus, ['Confirmed', 'In Progress', 'Completed'], true) &&
             (
@@ -165,11 +245,10 @@ class EventVendorController extends Controller
             ]);
         }
 
-        // Pastikan urutan tahapan pekerjaan tidak dilompati.
+        // Tahapan pekerjaan harus berurutan.
         if (
             $newStatus === 'In Progress' &&
-            $eventVendor->assignment_status !== 'Confirmed' &&
-            $eventVendor->assignment_status !== 'In Progress'
+            !in_array($eventVendor->assignment_status, ['Confirmed', 'In Progress'], true)
         ) {
             throw ValidationException::withMessages([
                 'assignment_status' => 'Penugasan harus berstatus Confirmed sebelum pekerjaan dimulai.',
@@ -178,8 +257,7 @@ class EventVendorController extends Controller
 
         if (
             $newStatus === 'Completed' &&
-            $eventVendor->assignment_status !== 'In Progress' &&
-            $eventVendor->assignment_status !== 'Completed'
+            !in_array($eventVendor->assignment_status, ['In Progress', 'Completed'], true)
         ) {
             throw ValidationException::withMessages([
                 'assignment_status' => 'Penugasan harus berstatus In Progress sebelum dinyatakan selesai.',
@@ -189,7 +267,9 @@ class EventVendorController extends Controller
         $eventVendor->update($validated);
 
         return redirect()
-            ->route('event-vendors.index')
+            ->route('vendor-confirmations.index', [
+                'organization' => $organization->slug,
+            ])
             ->with('success', 'Penugasan vendor berhasil diperbarui.');
     }
 }

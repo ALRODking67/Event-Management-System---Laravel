@@ -58,7 +58,9 @@ class OrganizationController extends Controller
         });
 
         return redirect()
-            ->route('organizations.workspace', $organization->slug)
+            ->route('organizations.dashboard', [
+                'organization' => $organization->slug,
+            ])
             ->with('success', 'Organisasi berhasil dibuat.');
     }
 

@@ -54,18 +54,24 @@
                     </h3>
 
                     <p style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                        {{ $event->start_datetime->format('d-m-Y H:i') }}
+                        {{ $event->start_datetime?->format('d-m-Y H:i') ?? 'Jadwal belum ditentukan' }}
                         | Status: {{ $event->status }}
                     </p>
                 </div>
 
                 @if ($event->evaluation)
-                    <a href="{{ route('evaluations.edit', $event->evaluation->id) }}"
+                    <a href="{{ route('evaluations.edit', [
+                        'organization' => $organization->slug,
+                        'evaluation' => $event->evaluation->id
+                    ]) }}"
                        style="background: #2f65f6; color: white; padding: 9px 15px; border-radius: 6px; text-decoration: none;">
                         Edit Evaluasi
                     </a>
                 @else
-                    <a href="{{ route('evaluations.create', $event->id) }}"
+                    <a href="{{ route('evaluations.create', [
+                        'organization' => $organization->slug,
+                        'event' => $event->id
+                    ]) }}"
                        style="background: #2f65f6; color: white; padding: 9px 15px; border-radius: 6px; text-decoration: none;">
                         Buat Evaluasi
                     </a>
@@ -127,7 +133,7 @@
     @empty
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 30px; text-align: center;">
             <p style="color: #64748b;">
-                Belum ada acara yang dapat ditampilkan.
+                Belum ada acara dalam organisasi ini.
             </p>
         </div>
     @endforelse

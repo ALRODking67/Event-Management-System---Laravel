@@ -113,13 +113,21 @@
 </head>
 
 <body>
+
     @php
-        $userRole = $currentOrganizationRole ?? Auth::user()->role?->role_name;
+        $user = Auth::user();
+
+        $hasCurrentOrganization = isset($currentOrganization)
+            && $currentOrganization instanceof \App\Models\Organization;
+
+        $userRole = $currentOrganizationRole
+            ?? $user->role?->role_name;
 
         $isVendor = $userRole === 'Vendor';
         $isAdmin = $userRole === 'Admin';
 
-        $hasCurrentOrganization = isset($currentOrganization);
+        $canManageOrganization = $hasCurrentOrganization
+            && in_array($userRole, ['Admin', 'Staf Operasional']);
     @endphp
 
     <aside class="ems-sidebar">
@@ -130,107 +138,142 @@
         {{-- MENU UTAMA --}}
         <div class="ems-menu-title">MENU UTAMA</div>
 
-        <a href="{{ route('dashboard') }}"
-           class="ems-menu {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            ▦ &nbsp; Dashboard
+        <a href="{{ $hasCurrentOrganization
+                ? route('organizations.dashboard', ['organization' => $currentOrganization->slug])
+                : route('dashboard') }}"
+           class="ems-menu {{ request()->routeIs('dashboard', 'organizations.dashboard') ? 'active' : '' }}">
+            Dashboard
         </a>
 
-        @if (!$isVendor)
+        {{-- MENU VENDOR --}}
+        @if ($hasCurrentOrganization && $isVendor)
+
+            <div class="ems-menu-title">LAYANAN VENDOR</div>
+
+            <a href="{{ route('vendor-confirmations.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('vendor-negotiations.*') ? 'active' : '' }}">
+                Konfirmasi Vendor
+            </a>
+
+        @endif
+
+        {{-- FITUR PENGELOLAAN ORGANISASI --}}
+        @if ($canManageOrganization)
+
+            <div class="ems-menu-title">PENGELOLAAN ACARA</div>
+
             <a href="{{ route('events.index', ['organization' => $currentOrganization->slug]) }}"
                class="ems-menu {{ request()->routeIs('events.*') ? 'active' : '' }}">
-                ◈ &nbsp; Kelola Acara
+                Kelola Acara
             </a>
 
-            <a href="{{ route('event-concepts.index') }}"
+            <a href="{{ route('event-concepts.index', ['organization' => $currentOrganization->slug]) }}"
                class="ems-menu {{ request()->routeIs('event-concepts.*') ? 'active' : '' }}">
-                ◇ &nbsp; Konsep Acara
+                Konsep Acara
             </a>
 
-            <a href="{{ route('rundowns.index') }}"
+            <a href="{{ route('rundowns.index', ['organization' => $currentOrganization->slug]) }}"
                class="ems-menu {{ request()->routeIs('rundowns.*') ? 'active' : '' }}">
-                ◷ &nbsp; Rundown Acara
+                Rundown Acara
             </a>
 
             {{-- SUMBER DAYA --}}
             <div class="ems-menu-title">SUMBER DAYA</div>
 
-            @if ($hasCurrentOrganization)
+            <a href="{{ route('venues.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('venues.*') ? 'active' : '' }}">
+                Venue
+            </a>
 
-                <a href="{{ route('venues.index', ['organization' => $currentOrganization->slug]) }}"
-                class="ems-menu {{ request()->routeIs('venues.*') ? 'active' : '' }}">
-                    Venue
+            <a href="{{ route('equipment.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('equipment.*') ? 'active' : '' }}">
+                Peralatan Teknis
+            </a>
+
+            <a href="{{ route('equipment-categories.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('equipment-categories.*') ? 'active' : '' }}">
+                Kategori Peralatan
+            </a>
+
+            <a href="{{ route('event-equipment.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('event-equipment.*') ? 'active' : '' }}">
+                Penugasan Peralatan
+            </a>
+
+            <a href="{{ route('vendors.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('vendors.*') ? 'active' : '' }}">
+                Kelola Vendor
+            </a>
+
+            @if ($userRole === 'Admin')
+                <a href="{{ route('staff.index', ['organization' => $currentOrganization->slug]) }}"
+                class="ems-menu {{ request()->routeIs('staff.*') ? 'active' : '' }}">
+                    Kelola Staf
                 </a>
+            @endif
 
-                <a href="{{ route('equipment.index', ['organization' => $currentOrganization->slug]) }}"
-                class="ems-menu {{ request()->routeIs('equipment.*') ? 'active' : '' }}">
-                    Peralatan Teknis
-                </a>
+           <a href="{{ route('vendor-confirmations.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('event-vendors.*', 'vendor-confirmations.*', 'vendor-negotiations.*') ? 'active' : '' }}">
+                Penugasan Vendor
+            </a>
 
-                <a href="{{ route('equipment-categories.index', ['organization' => $currentOrganization->slug]) }}"
-                class="ems-menu {{ request()->routeIs('equipment-categories.*') ? 'active' : '' }}">
-                    Kategori Peralatan
+            {{-- KEUANGAN --}}
+            <div class="ems-menu-title">KEUANGAN</div>
+
+            <a href="{{ route('financial-transactions.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('financial-transactions.*') ? 'active' : '' }}">
+                Manajemen Keuangan
+            </a>
+
+            {{-- EVALUASI --}}
+            <div class="ems-menu-title">EVALUASI</div>
+
+            <a href="{{ route('evaluations.index', ['organization' => $currentOrganization->slug]) }}"
+               class="ems-menu {{ request()->routeIs('evaluations.*') ? 'active' : '' }}">
+                Evaluasi &amp; ROI
+            </a>
+
+            {{-- LAPORAN --}}
+            @if ($isAdmin)
+
+                <div class="ems-menu-title">LAPORAN</div>
+
+                <a href="{{ route('reports.index', ['organization' => $currentOrganization->slug]) }}"
+                   class="ems-menu {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                    Laporan Evaluasi
                 </a>
 
             @endif
 
-            <a href="{{ route('event-equipment.index', ['organization' => $currentOrganization->slug]) }}"
-               class="ems-menu {{ request()->routeIs('event-equipment.*') ? 'active' : '' }}">
-                ▧ &nbsp; Penugasan Peralatan
-            </a>
+            {{-- MANAJEMEN AKUN --}}
+            @if ($isAdmin)
 
-            <a href="{{ route('vendors.index') }}"
-               class="ems-menu {{ request()->routeIs('vendors.*') ? 'active' : '' }}">
-                ▣ &nbsp; Kelola Vendor
-            </a>
+                <div class="ems-menu-title">MANAJEMEN ORGANISASI</div>
 
-            <a href="{{ route('event-vendors.index') }}"
-               class="ems-menu {{ request()->routeIs('event-vendors.*') ? 'active' : '' }}">
-                ▣ &nbsp; Penugasan Vendor
-            </a>
+                <a href="{{ route('users.index', ['organization' => $currentOrganization->slug]) }}"
+                   class="ems-menu {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    Manajemen Pengguna
+                </a>
+
+            @endif
+
         @endif
 
-        {{-- KONFIRMASI VENDOR --}}
-        <a href="{{ route('vendor-confirmations.index') }}"
-           class="ems-menu {{ request()->routeIs('vendor-confirmations.*') ? 'active' : '' }}">
-            ✓ &nbsp; Konfirmasi Vendor
-        </a>
-
-        {{-- EVALUASI --}}
-        @if (!$isVendor)
-            <div class="ems-menu-title">EVALUASI</div>
-
-            <a href="{{ route('evaluations.index') }}"
-               class="ems-menu {{ request()->routeIs('evaluations.*') ? 'active' : '' }}">
-                ▥ &nbsp; Evaluasi & ROI
-            </a>
-        @endif
-
-        {{-- LAPORAN --}}
-        @if ($isAdmin)
-            <a href="{{ route('reports.index') }}"
-               class="ems-menu {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                ▤ &nbsp; Laporan Evaluasi
-            </a>
-        @endif
-
-        {{-- AKUN --}}
+        {{-- INFORMASI AKUN --}}
         <div class="ems-menu-title">AKUN</div>
 
-        {{-- MANAJEMEN PENGGUNA KHUSUS ADMIN --}}
-        @if ($isAdmin)
-            <a href="{{ route('users.index') }}"
-               class="ems-menu {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                ♙ &nbsp; Manajemen Pengguna
-            </a>
-        @endif
-
-        {{-- INFORMASI PENGGUNA --}}
         <div class="ems-menu">
-            <strong>{{ Auth::user()->name }}</strong>
+            <strong>{{ $user->name }}</strong>
 
             <div style="font-size:11px;color:#94A3B8;margin-top:5px;">
                 {{ $userRole ?? 'Tidak memiliki role' }}
             </div>
+
+            @if ($hasCurrentOrganization)
+                <div style="font-size:11px;color:#94A3B8;margin-top:5px;">
+                    {{ $currentOrganization->name }}
+                </div>
+            @endif
         </div>
 
         {{-- LOGOUT --}}
@@ -238,9 +281,9 @@
             @csrf
 
             <button type="submit"
-                class="ems-menu"
-                style="background:none;border:0;width:100%;text-align:left;cursor:pointer;">
-                ↪ &nbsp; Keluar
+                    class="ems-menu"
+                    style="background:none;border:0;width:100%;text-align:left;cursor:pointer;">
+                Keluar
             </button>
         </form>
 
@@ -250,6 +293,7 @@
     <main class="ems-main">
 
         <div class="ems-topbar">
+
             <div>
                 <div style="color:#94A3B8;font-size:13px;">
                     Event Management System
@@ -260,14 +304,110 @@
                 </h1>
             </div>
 
-            <div class="ems-user">
-                {{ Auth::user()->name }}
+            <div style="display:flex; align-items:center; gap:15px;">
+
+                @if ($hasCurrentOrganization)
+                    @php
+                        $recentNotifications = $user->notifications()
+                            ->latest()
+                            ->take(5)
+                            ->get();
+
+                        $unreadNotificationCount = $user->unreadNotifications()->count();
+                    @endphp
+
+                    <details style="position:relative;">
+                        <summary style="list-style:none; cursor:pointer; position:relative; padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; color:#334155; display:flex; align-items:center; gap:8px;">
+                            <span>🔔 Notifikasi</span>
+
+                            @if ($unreadNotificationCount > 0)
+                                <span style="
+                                    background:#dc2626;
+                                    color:white;
+                                    border-radius:50%;
+                                    min-width:20px;
+                                    height:20px;
+                                    padding:0 5px;
+                                    display:inline-flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    font-size:11px;
+                                    font-weight:bold;
+                                ">
+                                    {{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}
+                                </span>
+                            @endif
+                        </summary>
+
+                        <div style="position:absolute; right:0; top:45px; width:320px; max-width:80vw; background:white; border:1px solid #e2e8f0; border-radius:9px; box-shadow:0 8px 25px rgba(0,0,0,.10); z-index:1000; padding:10px;">
+
+                            @forelse ($recentNotifications as $notification)
+                                <a href="{{ route('notifications.open', [
+                                    'organization' => $currentOrganization->slug,
+                                    'notification' => $notification->id,
+                                ]) }}"
+                                style="display:block; padding:11px; border-radius:6px; text-decoration:none; color:#334155; background:{{ $notification->read_at ? '#ffffff' : '#eff6ff' }}; margin-bottom:5px;">
+
+                                    <strong style="font-size:13px;">
+                                        {{ $notification->data['title'] ?? 'Notifikasi' }}
+                                    </strong>
+
+                                    <p style="font-size:12px; margin:5px 0; color:#64748b;">
+                                        {{ $notification->data['message'] ?? '' }}
+                                    </p>
+
+                                    <span style="font-size:11px; color:#94a3b8;">
+                                        {{ $notification->created_at->format('d-m-Y H:i') }}
+                                    </span>
+                                </a>
+                            @empty
+                                <p style="font-size:13px; color:#64748b; padding:10px;">
+                                    Belum ada notifikasi.
+                                </p>
+                            @endforelse
+                        </div>
+                    </details>
+                @endif
+
+                <div class="ems-user">
+                    {{ $user->name }}
+                </div>
             </div>
+
         </div>
 
         @yield('content')
 
     </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.querySelector('.ems-sidebar');
+
+        if (!sidebar) return;
+
+        const storageKey = 'ems_sidebar_scroll';
+
+        // Pulihkan posisi scroll sebelumnya.
+        const savedPosition = sessionStorage.getItem(storageKey);
+
+        if (savedPosition !== null) {
+            sidebar.scrollTop = parseInt(savedPosition, 10);
+        }
+
+        // Simpan posisi ketika sidebar di-scroll.
+        sidebar.addEventListener('scroll', function () {
+            sessionStorage.setItem(storageKey, sidebar.scrollTop);
+        });
+
+        // Simpan posisi sebelum berpindah halaman melalui menu.
+        sidebar.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function () {
+                sessionStorage.setItem(storageKey, sidebar.scrollTop);
+            });
+        });
+    });
+    </script>
 
 </body>
 </html>

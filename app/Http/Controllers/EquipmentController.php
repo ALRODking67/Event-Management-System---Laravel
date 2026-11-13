@@ -4,33 +4,47 @@ namespace App\Http\Controllers;
 
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
+use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class EquipmentController extends Controller
 {
-    public function index()
+    public function index(Organization $organization)
     {
-        $equipment = Equipment::with('category')
+        $equipment = $organization->equipment()
+            ->with('category')
             ->orderBy('equipment_name')
             ->get();
 
-        return view('equipment.index', compact('equipment'));
+        return view('equipment.index', compact('equipment', 'organization'));
     }
 
-    public function create()
+    public function create(Organization $organization)
     {
-        $categories = EquipmentCategory::orderBy('category_name')->get();
+        $categories = $organization->equipmentCategories()
+            ->orderBy('category_name')
+            ->get();
 
-        return view('equipment.create', compact('categories'));
+        return view('equipment.create', compact('categories', 'organization'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, Organization $organization)
     {
         $validated = $request->validate([
-            'category_id' => ['required', 'exists:equipment_categories,id'],
+            'category_id' => [
+                'required',
+                Rule::exists('equipment_categories', 'id')
+                    ->where('organization_id', $organization->id),
+            ],
             'equipment_name' => ['required', 'string', 'max:150'],
-            'asset_code' => ['required', 'string', 'max:80', 'unique:equipment,asset_code'],
+            'asset_code' => [
+                'required',
+                'string',
+                'max:80',
+                Rule::unique('equipment', 'asset_code')
+                    ->where('organization_id', $organization->id),
+            ],
             'condition_status' => [
                 'required',
                 Rule::in(['Good', 'Minor Damage', 'Major Damage', 'Broken']),
@@ -41,30 +55,41 @@ class EquipmentController extends Controller
             ],
         ]);
 
-        Equipment::create($validated);
+        $organization->equipment()->create($validated);
 
         return redirect()
-            ->route('equipment.index')
+            ->route('equipment.index', ['organization' => $organization->slug])
             ->with('success', 'Peralatan berhasil ditambahkan.');
     }
 
-    public function edit(Equipment $equipment)
+    public function edit(Organization $organization, Equipment $equipment)
     {
-        $categories = EquipmentCategory::orderBy('category_name')->get();
+        $categories = $organization->equipmentCategories()
+            ->orderBy('category_name')
+            ->get();
 
-        return view('equipment.edit', compact('equipment', 'categories'));
+        return view('equipment.edit', compact('equipment', 'categories', 'organization'));
     }
 
-    public function update(Request $request, Equipment $equipment)
-    {
+    public function update(
+        Request $request,
+        Organization $organization,
+        Equipment $equipment
+    ) {
         $validated = $request->validate([
-            'category_id' => ['required', 'exists:equipment_categories,id'],
+            'category_id' => [
+                'required',
+                Rule::exists('equipment_categories', 'id')
+                    ->where('organization_id', $organization->id),
+            ],
             'equipment_name' => ['required', 'string', 'max:150'],
             'asset_code' => [
                 'required',
                 'string',
                 'max:80',
-                Rule::unique('equipment', 'asset_code')->ignore($equipment->id),
+                Rule::unique('equipment', 'asset_code')
+                    ->where('organization_id', $organization->id)
+                    ->ignore($equipment->id),
             ],
             'condition_status' => [
                 'required',
@@ -79,7 +104,7 @@ class EquipmentController extends Controller
         $equipment->update($validated);
 
         return redirect()
-            ->route('equipment.index')
+            ->route('equipment.index', ['organization' => $organization->slug])
             ->with('success', 'Data peralatan berhasil diperbarui.');
     }
 }

@@ -125,7 +125,7 @@
         Masukkan informasi lokasi yang dapat digunakan untuk penyelenggaraan acara.
     </p>
 
-    <form action="{{ route('venues.store') }}" method="POST">
+    <form action="{{ route('venues.store', ['organization' => $currentOrganization->slug]) }}" method="POST">
         @csrf
 
         <div class="venue-field">
@@ -246,7 +246,7 @@
                 Simpan Venue
             </button>
 
-            <a href="{{ route('venues.index') }}" class="venue-back">
+            <a href="{{ route('venues.index', ['organization' => $currentOrganization->slug]) }}" class="venue-back">
                 Kembali
             </a>
         </div>
