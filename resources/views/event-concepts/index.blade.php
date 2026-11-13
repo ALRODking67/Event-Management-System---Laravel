@@ -25,7 +25,7 @@
             </p>
         </div>
 
-        <a href="{{ route('event-concepts.create') }}"
+        <a href="{{ route('event-concepts.create', ['organization' => $currentOrganization->slug]) }}"
            style="background:#2F65F6; color:white; padding:11px 17px; border-radius:7px; text-decoration:none; font-size:14px;">
             + Buat Konsep
         </a>
@@ -113,14 +113,17 @@
 
                                     @if ($event->concept)
 
-                                        <a href="{{ route('event-concepts.edit', $event->concept) }}"
-                                           style="color:#2563EB; font-weight:600; text-decoration:none;">
+                                        <a href="{{ route('event-concepts.edit', [
+                                            'organization' => $currentOrganization->slug,
+                                            'eventConcept' => $event->concept->id
+                                        ]) }}"
+                                        style="color:#2563EB; font-weight:600; text-decoration:none;">
                                             Edit
                                         </a>
 
                                     @else
 
-                                        <a href="{{ route('event-concepts.create', ['event_id' => $event->id]) }}"
+                                        <a href="{{ route('event-concepts.create', ['organization' => $currentOrganization->slug], ['event_id' => $event->id]) }}"
                                            style="color:#2563EB; font-weight:600; text-decoration:none;">
                                             Buat Konsep
                                         </a>

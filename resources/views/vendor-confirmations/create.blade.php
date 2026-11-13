@@ -1,4 +1,3 @@
-
 @extends('layouts.ems')
 
 @section('title', 'Jawab Permintaan Vendor')
@@ -27,7 +26,7 @@
                 Saat ini tidak ada penugasan berstatus Requested yang menunggu jawaban dari akun Vendor Anda.
             </p>
 
-            <a href="{{ route('vendor-confirmations.index') }}"
+            <a href="{{ route('vendor-confirmations.index', ['organization' => $organization->slug]) }}"
                style="background: #e2e8f0; color: #334155; padding: 11px 20px; border-radius: 6px; text-decoration: none;">
                 Kembali ke Daftar Konfirmasi
             </a>
@@ -41,7 +40,8 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('vendor-confirmations.store') }}">
+            <form method="POST"
+                  action="{{ route('vendor-confirmations.store', ['organization' => $organization->slug]) }}">
                 @csrf
 
                 <div style="margin-bottom: 20px;">
@@ -77,14 +77,10 @@
                     <select name="availability_status" id="availability_status" required
                             style="width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         <option value="">-- Pilih Jawaban --</option>
-
-                        <option value="Available"
-                            {{ old('availability_status') === 'Available' ? 'selected' : '' }}>
+                        <option value="Available" {{ old('availability_status') === 'Available' ? 'selected' : '' }}>
                             Tersedia
                         </option>
-
-                        <option value="Unavailable"
-                            {{ old('availability_status') === 'Unavailable' ? 'selected' : '' }}>
+                        <option value="Unavailable" {{ old('availability_status') === 'Unavailable' ? 'selected' : '' }}>
                             Tidak Tersedia
                         </option>
                     </select>
@@ -118,7 +114,7 @@
                         Kirim Jawaban
                     </button>
 
-                    <a href="{{ route('vendor-confirmations.index') }}"
+                    <a href="{{ route('vendor-confirmations.index', ['organization' => $organization->slug]) }}"
                        style="background: #e2e8f0; color: #334155; padding: 11px 20px; border-radius: 6px; text-decoration: none;">
                         Kembali
                     </a>

@@ -25,7 +25,7 @@
             </p>
         </div>
 
-        <a href="{{ route('events.create') }}"
+        <a href="{{ route('events.create', ['organization' => $organization->slug]) }}"
            style="background:#2F65F6; color:white; padding:11px 17px; border-radius:7px; text-decoration:none; font-size:14px;">
             + Tambah Acara
         </a>
@@ -57,7 +57,7 @@
                     Tambahkan acara untuk mulai mengelola kebutuhan operasionalnya.
                 </p>
 
-                <a href="{{ route('events.create') }}"
+                <a href="{{ route('events.create', ['organization' => $organization->slug]) }}"
                    style="display:inline-block; margin-top:18px; background:#2F65F6; color:white; padding:10px 16px; border-radius:7px; text-decoration:none;">
                     Tambah Acara
                 </a>
@@ -110,7 +110,7 @@
                                 </td>
 
                                 <td style="padding:15px 16px; text-align:right;">
-                                    <a href="{{ route('events.edit', $event) }}"
+                                    <a href="{{ route('events.edit', ['organization' => $organization->slug, 'event' => $event->id]) }}"
                                        style="color:#2563EB; font-weight:600; text-decoration:none;">
                                         Edit
                                     </a>

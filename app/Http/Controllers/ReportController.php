@@ -2,24 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Event;
-use Illuminate\Http\Request;
+use App\Models\Organization;
 
 class ReportController extends Controller
 {
-    public function index()
+    public function index(Organization $organization)
     {
-        $events = Event::with([
-            'venue',
-            'evaluation',
-            'financialTransactions',
-            'rundownItems',
-            'vendorAssignments.vendor',
-            'equipmentAssignments.equipment',
-        ])
+        $events = $organization->events()
+            ->with([
+                'venue',
+                'evaluation',
+                'financialTransactions',
+                'rundownItems',
+                'vendorAssignments.vendor',
+                'equipmentAssignments.equipment.category',
+            ])
             ->orderByDesc('start_datetime')
             ->get();
 
-        return view('reports.index', compact('events'));
+        return view('reports.index', compact(
+            'organization',
+            'events'
+        ));
     }
 }

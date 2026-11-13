@@ -1,104 +1,96 @@
-
 @extends('layouts.ems')
 
+@section('title', 'Edit Role Anggota | EMS')
+@section('page-heading', 'Edit Role Anggota')
+
 @section('content')
-<div class="container">
-    <h1>Edit Pengguna</h1>
+<div class="max-w-2xl space-y-6">
+
+    <div>
+        <h2 class="text-2xl font-bold text-slate-800">
+            Edit Role Anggota
+        </h2>
+        <p class="mt-1 text-sm text-slate-500">
+            Ubah hak akses anggota dalam {{ $organization->name }}.
+        </p>
+    </div>
 
     @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+        <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            @foreach ($errors->all() as $error)
+                <p>{{ $error }}</p>
+            @endforeach
         </div>
     @endif
 
-    @php
-        $isSelf = auth()->id() === $user->id;
-    @endphp
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
 
-    <form action="{{ route('users.update', $user) }}" method="POST">
-        @csrf
-        @method('PUT')
+        <div class="mb-6 border-b border-slate-100 pb-5">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Informasi Anggota
+            </p>
 
-        <div style="margin-bottom:15px;">
-            <label>Nama</label><br>
-            <input type="text" name="name"
-                value="{{ old('name', $user->name) }}" required>
+            <h3 class="mt-2 text-lg font-bold text-slate-800">
+                {{ $member->user->name }}
+            </h3>
+
+            <p class="mt-1 text-sm text-slate-500">
+                {{ $member->user->email }}
+            </p>
+
+            <p class="mt-3 text-sm text-slate-600">
+                Role saat ini:
+                <span class="font-semibold text-slate-800">
+                    {{ $member->role->role_name }}
+                </span>
+            </p>
         </div>
 
-        <div style="margin-bottom:15px;">
-            <label>Email</label><br>
-            <input type="email" name="email"
-                value="{{ old('email', $user->email) }}" required>
-        </div>
+        <form method="POST"
+            action="{{ route('users.update', [
+                'organization' => $organization->slug,
+                'member' => $member->id
+            ]) }}">
+            @csrf
+            @method('PUT')
 
-        <div style="margin-bottom:15px;">
-            <label>Role</label><br>
-            <select name="role_id" {{ $isSelf ? 'disabled' : '' }} required>
-                @foreach ($roles as $role)
-                    <option value="{{ $role->id }}"
-                        @selected(old('role_id', $user->role_id) == $role->id)>
-                        {{ $role->role_name }}
-                    </option>
-                @endforeach
-            </select>
+            <div class="mb-6">
+                <label class="mb-2 block text-sm font-semibold text-slate-700">
+                    Role Baru
+                </label>
 
-            @if ($isSelf)
-                <input type="hidden" name="role_id" value="{{ $user->role_id }}">
-                <small>Role akun sendiri tidak dapat diubah di sini.</small>
-            @endif
-        </div>
+                <select
+                    name="role_id"
+                    required
+                    class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
 
-        <div style="margin-bottom:15px;">
-            <label>Profil Vendor</label><br>
-            <select name="vendor_id" {{ $isSelf ? 'disabled' : '' }}>
-                <option value="">-- Tidak dihubungkan --</option>
-                @foreach ($vendors as $vendor)
-                    <option value="{{ $vendor->id }}"
-                        @selected(old('vendor_id', $user->vendor_id) == $vendor->id)>
-                        {{ $vendor->vendor_name }}
-                    </option>
-                @endforeach
-            </select>
+                    @foreach ($roles as $role)
+                        <option
+                            value="{{ $role->id }}"
+                            @selected(old('role_id', $member->role_id) == $role->id)>
+                            {{ $role->role_name }}
+                        </option>
+                    @endforeach
+                </select>
 
-            @if ($isSelf)
-                <input type="hidden" name="vendor_id" value="{{ $user->vendor_id }}">
-            @endif
-        </div>
+                <p class="mt-2 text-xs text-slate-500">
+                    Jika memilih Vendor, sistem akan mencari profil Vendor dalam organisasi ini dengan email yang sama dengan akun anggota.
+                </p>
+            </div>
 
-        <div style="margin-bottom:15px;">
-            <label>Status Akun</label><br>
-            <select name="is_active" {{ $isSelf ? 'disabled' : '' }} required>
-                <option value="1" @selected(old('is_active', $user->is_active) == '1')>Aktif</option>
-                <option value="0" @selected(old('is_active', $user->is_active) == '0')>Nonaktif</option>
-            </select>
+            <div class="flex flex-wrap gap-3">
+                <button type="submit"
+                    class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+                    Simpan Perubahan
+                </button>
 
-            @if ($isSelf)
-                <input type="hidden" name="is_active" value="1">
-                <small>Akun sendiri tidak dapat dinonaktifkan.</small>
-            @endif
-        </div>
+                <a href="{{ route('users.index', $organization->slug) }}"
+                    class="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                    Kembali
+                </a>
+            </div>
+        </form>
 
-        <hr>
-
-        <h3>Ganti Password</h3>
-        <p>Kosongkan jika tidak ingin mengganti password.</p>
-
-        <div style="margin-bottom:15px;">
-            <label>Password Baru</label><br>
-            <input type="password" name="password">
-        </div>
-
-        <div style="margin-bottom:15px;">
-            <label>Konfirmasi Password Baru</label><br>
-            <input type="password" name="password_confirmation">
-        </div>
-
-        <button type="submit">Simpan Perubahan</button>
-        <a href="{{ route('users.index') }}">Kembali</a>
-    </form>
+    </div>
 </div>
 @endsection

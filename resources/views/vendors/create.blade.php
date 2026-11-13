@@ -18,7 +18,7 @@
 
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px;">
 
-        <form action="{{ route('vendors.store') }}" method="POST">
+        <form action="{{ route('vendors.store', ['organization' => $currentOrganization->slug]) }}" method="POST">
             @csrf
 
             <div style="margin-bottom: 18px;">
@@ -48,18 +48,53 @@
                 >
             </div>
 
-            <div style="margin-bottom: 18px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 7px;">
-                    Email
-                </label>
+            
+            <div style="margin-bottom: 16px;">
+                <label for="email">Email Login *</label>
                 <input
                     type="email"
+                    id="email"
                     name="email"
                     value="{{ old('email') }}"
-                    maxlength="150"
-                    style="display: block; width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 7px;"
+                    required
+                    autocomplete="email"
+                    style="width: 100%; padding: 10px; margin-top: 6px;"
+                >
+                @error('email')
+                    <small style="color: red;">{{ $message }}</small>
+                @enderror
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label for="password">Password Awal *</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    minlength="8"
+                    autocomplete="new-password"
+                    style="width: 100%; padding: 10px; margin-top: 6px;"
+                >
+                @error('password')
+                    <small style="color: red;">{{ $message }}</small>
+                @enderror
+                <small>Minimal 8 karakter. Password ini diberikan Admin kepada Vendor.</small>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label for="password_confirmation">Konfirmasi Password *</label>
+                <input
+                    type="password"
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    required
+                    minlength="8"
+                    autocomplete="new-password"
+                    style="width: 100%; padding: 10px; margin-top: 6px;"
                 >
             </div>
+
 
             <div style="margin-bottom: 18px;">
                 <label style="display: block; font-weight: 600; margin-bottom: 7px;">
@@ -98,7 +133,7 @@
                 </button>
 
                 <a
-                    href="{{ route('vendors.index') }}"
+                    href="{{ route('vendors.index', ['organization' => $currentOrganization->slug]) }}"
                     style="color: #475569; text-decoration: none; padding: 11px 14px;"
                 >
                     Batal

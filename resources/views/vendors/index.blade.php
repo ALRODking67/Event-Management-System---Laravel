@@ -13,7 +13,7 @@
     @endif
 
     <div style="margin-bottom: 20px;">
-        <a href="{{ route('vendors.create') }}"
+        <a href="{{ route('vendors.create', ['organization' => $currentOrganization->slug]) }}"
             style="display: inline-block; background: #2f65f6; color: white; padding: 11px 20px; border-radius: 7px; text-decoration: none; font-weight: 600;">
             + Tambah Vendor
         </a>
@@ -51,7 +51,10 @@
                             <td style="padding: 12px;">{{ $vendor->service_type }}</td>
                             <td style="padding: 12px;">{{ $vendor->event_assignments_count }}</td>
                             <td style="padding: 12px;">
-                                <a href="{{ route('vendors.edit', $vendor->id) }}"
+                                <a href="{{ route('vendors.edit', [
+                                    'organization' => $currentOrganization->slug,
+                                    'vendor' => $vendor->id
+                                ]) }}"
                                     style="color: #2563eb; text-decoration: underline;">
                                     Edit
                                 </a>

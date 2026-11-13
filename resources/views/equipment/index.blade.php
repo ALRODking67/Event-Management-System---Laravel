@@ -121,7 +121,7 @@
             </p>
         </div>
 
-        <a href="{{ route('equipment.create') }}" class="equipment-add-button">
+        <a href="{{ route('equipment.create', ['organization' => $currentOrganization->slug]) }}" class="equipment-add-button">
             + Tambah Peralatan
         </a>
     </div>
@@ -179,7 +179,7 @@
 
                             <td>
                                 <a
-                                    href="{{ route('equipment.edit', $item->id) }}"
+                                    href="{{ route('equipment.edit', ['organization' => $currentOrganization->slug, 'equipment' => $item->id]) }}"
                                     class="equipment-edit"
                                 >
                                     Edit

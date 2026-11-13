@@ -27,12 +27,12 @@
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
 
-            <a href="{{ route('equipment.index') }}"
+            <a href="{{ route('equipment.index', ['organization' => $currentOrganization->slug]) }}"
                style="display: inline-block; padding: 11px 16px; border: 1px solid #cbd5e1; border-radius: 7px; color: #475569; text-decoration: none; font-size: 14px;">
                 Kembali ke Inventaris
             </a>
 
-            <a href="{{ route('equipment-categories.create') }}"
+            <a href="{{ route('equipment-categories.create', ['organization' => $currentOrganization->slug]) }}"
                style="display: inline-block; background: #2f65f6; color: white; padding: 11px 18px; border-radius: 7px; text-decoration: none; font-size: 14px; font-weight: 600;">
                 + Tambah Kategori
             </a>
@@ -59,7 +59,7 @@
                     Tambahkan kategori agar inventaris peralatan dapat dikelompokkan dengan baik.
                 </p>
 
-                <a href="{{ route('equipment-categories.create') }}"
+                <a href="{{ route('equipment-categories.create', ['organization' => $currentOrganization->slug]) }}"
                    style="display: inline-block; background: #2f65f6; color: white; padding: 10px 18px; border-radius: 7px; text-decoration: none; font-size: 14px;">
                     + Tambah Kategori
                 </a>
@@ -98,7 +98,7 @@
                                 </td>
 
                                 <td style="padding: 16px 24px; font-size: 14px;">
-                                    <a href="{{ route('equipment-categories.edit', $category->id) }}"
+                                    <a href="{{ route('equipment-categories.edit', ['organization' => $currentOrganization->slug, 'equipmentCategory' => $category->id]) }}"
                                        style="display: inline-block; color: #2f65f6; font-weight: 600; text-decoration: none;">
                                         Edit
                                     </a>

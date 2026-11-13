@@ -1,3 +1,4 @@
+
 @extends('layouts.ems')
 
 @section('title', 'Edit Penugasan Peralatan')
@@ -18,7 +19,10 @@
 
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px;">
 
-        <form action="{{ route('event-equipment.update', $eventEquipment->id) }}" method="POST">
+        <form action="{{ route('event-equipment.update', [
+            'organization' => $organization->slug,
+            'eventEquipment' => $eventEquipment->id
+        ]) }}" method="POST">
             @csrf
             @method('PUT')
 
@@ -51,7 +55,7 @@
                     @foreach ($equipment as $item)
                         <option value="{{ $item->id }}"
                             {{ old('equipment_id', $eventEquipment->equipment_id) == $item->id ? 'selected' : '' }}>
-                            {{ $item->equipment_name }} — {{ $item->category->category_name }} ({{ $item->asset_code }})
+                            {{ $item->equipment_name }} - {{ $item->category->category_name ?? '-' }} ({{ $item->asset_code }})
                         </option>
                     @endforeach
 
@@ -110,7 +114,7 @@
                     Simpan Perubahan
                 </button>
 
-                <a href="{{ route('event-equipment.index') }}"
+                <a href="{{ route('event-equipment.index', ['organization' => $organization->slug]) }}"
                     style="color: #475569; text-decoration: none; padding: 11px 14px;">
                     Batal
                 </a>

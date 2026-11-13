@@ -3,116 +3,151 @@
 namespace App\Http\Controllers;
 
 use App\Models\EventVendor;
+use App\Models\Organization;
 use App\Models\VendorConfirmation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class VendorConfirmationController extends Controller
 {
     /**
-     * Memastikan pengguna memiliki role Vendor.
+     * Mengambil role pengguna dalam organisasi aktif.
      */
-    private function ensureVendorRole(Request $request): void
-    {
-        if ($request->user()->role?->role_name !== 'Vendor') {
-            abort(403, 'Hanya akun Vendor yang dapat mengirim jawaban ketersediaan.');
-        }
-    }
-
-    /**
-     * Memastikan akun Vendor sudah terhubung dengan data vendor.
-     */
-    private function ensureVendorLinked(Request $request): void
-    {
-        $user = $request->user();
-
-        if (
-            $user->role?->role_name === 'Vendor'
-            && !$user->vendor_id
-        ) {
-            abort(403, 'Akun Vendor belum terhubung dengan data vendor.');
-        }
-    }
-
-    /**
-     * Memastikan penugasan merupakan milik Vendor yang sedang login.
-     */
-    private function ensureEventVendorAccess(
+    private function getOrganizationRole(
         Request $request,
-        EventVendor $eventVendor
-    ): void {
-        $user = $request->user();
+        Organization $organization
+    ): ?string {
+        $membership = $request->user()
+            ->organizationMemberships()
+            ->with('role')
+            ->where('organization_id', $organization->id)
+            ->first();
 
-        if (
-            (int) $eventVendor->vendor_id !== (int) $user->vendor_id
-        ) {
-            abort(403, 'Anda tidak memiliki akses ke penugasan vendor ini.');
-        }
+        return $membership?->role?->role_name;
     }
 
     /**
-     * Menampilkan daftar konfirmasi.
+     * Mengambil vendor_id dari keanggotaan organisasi,
+     * bukan dari users.vendor_id.
      */
-    public function index(Request $request)
+    private function ensureVendorLinked(
+        Request $request,
+        Organization $organization
+    ): int {
+        $membership = $request->user()
+            ->organizationMemberships()
+            ->where('organization_id', $organization->id)
+            ->first();
+
+        if (!$membership || !$membership->vendor_id) {
+            abort(403, 'Akun Vendor belum terhubung dengan data vendor organisasi ini.');
+        }
+
+        return (int) $membership->vendor_id;
+    }
+
+    /**
+     * Menampilkan pusat konfirmasi dan negosiasi vendor.
+     */
+    public function index(Request $request, Organization $organization)
     {
-        $this->ensureVendorLinked($request);
+        $role = $this->getOrganizationRole($request, $organization);
 
-        $user = $request->user();
+        abort_unless(
+            in_array($role, ['Admin', 'Staf Operasional', 'Vendor'], true),
+            403,
+            'Anda tidak memiliki akses ke halaman ini.'
+        );
 
-        $eventVendors = EventVendor::with([
-            'event',
-            'vendor',
-            'confirmations' => function ($query) {
-                $query->orderByDesc('confirmed_at')
-                    ->orderByDesc('id');
-            },
-        ])
-            ->when(
-                $user->role?->role_name === 'Vendor',
-                function ($query) use ($user) {
-                    $query->where('vendor_id', $user->vendor_id);
-                }
-            )
+        $query = $organization->eventVendors()
+            ->with([
+                'event',
+                'vendor',
+                'offers',
+                'confirmations' => function ($query) {
+                    $query->orderByDesc('confirmed_at')
+                        ->orderByDesc('id');
+                },
+            ]);
+
+        if ($role === 'Vendor') {
+            $vendorId = $this->ensureVendorLinked($request, $organization);
+
+            $query->where('vendor_id', $vendorId);
+        }
+
+        $eventVendors = $query
             ->orderByDesc('created_at')
             ->get();
 
+        /*
+         * Mengambil user yang menjadi anggota vendor
+         * dalam organisasi aktif.
+         *
+         * Ini digunakan untuk mengetahui apakah penawaran
+         * terakhir dikirim oleh Vendor atau Admin/Staf.
+         */
+        $vendorMemberUserIds = DB::table('organization_members')
+            ->where('organization_id', $organization->id)
+            ->whereNotNull('vendor_id')
+            ->get(['vendor_id', 'user_id'])
+            ->groupBy('vendor_id')
+            ->map(function ($members) {
+                return $members->pluck('user_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            })
+            ->all();
+
         return view(
             'vendor-confirmations.index',
-            compact('eventVendors')
+            compact(
+                'organization',
+                'eventVendors',
+                'role',
+                'vendorMemberUserIds'
+            )
         );
     }
 
     /**
-     * Menampilkan form jawaban ketersediaan.
+     * Form jawaban ketersediaan Vendor.
      */
-    public function create(Request $request)
+    public function create(Request $request, Organization $organization)
     {
-        $this->ensureVendorRole($request);
-        $this->ensureVendorLinked($request);
+        $role = $this->getOrganizationRole($request, $organization);
 
-        $user = $request->user();
+        if ($role !== 'Vendor') {
+            abort(403, 'Hanya Vendor yang dapat mengirim jawaban ketersediaan.');
+        }
 
-        $eventVendors = EventVendor::with([
-            'event',
-            'vendor',
-        ])
-            ->where('vendor_id', $user->vendor_id)
+        $vendorId = $this->ensureVendorLinked($request, $organization);
+
+        $eventVendors = $organization->eventVendors()
+            ->with(['event', 'vendor'])
+            ->where('vendor_id', $vendorId)
             ->where('assignment_status', 'Requested')
             ->orderByDesc('created_at')
             ->get();
 
         return view(
             'vendor-confirmations.create',
-            compact('eventVendors')
+            compact('organization', 'eventVendors')
         );
     }
 
     /**
-     * Menyimpan jawaban baru sebagai riwayat.
+     * Menyimpan jawaban ketersediaan Vendor.
      */
-    public function store(Request $request)
+    public function store(Request $request, Organization $organization)
     {
-        $this->ensureVendorRole($request);
-        $this->ensureVendorLinked($request);
+        $role = $this->getOrganizationRole($request, $organization);
+
+        if ($role !== 'Vendor') {
+            abort(403, 'Hanya Vendor yang dapat mengirim jawaban ketersediaan.');
+        }
+
+        $vendorId = $this->ensureVendorLinked($request, $organization);
 
         $validated = $request->validate([
             'event_vendor_id' => [
@@ -130,19 +165,10 @@ class VendorConfirmationController extends Controller
             ],
         ]);
 
-        $eventVendor = EventVendor::findOrFail(
-            $validated['event_vendor_id']
-        );
-
-        $this->ensureEventVendorAccess($request, $eventVendor);
-
-        // Vendor hanya boleh menjawab penugasan yang masih Requested.
-        if ($eventVendor->assignment_status !== 'Requested') {
-            abort(
-                403,
-                'Penugasan ini sudah diproses dan tidak menerima jawaban ketersediaan baru.'
-            );
-        }
+        $eventVendor = $organization->eventVendors()
+            ->where('vendor_id', $vendorId)
+            ->where('assignment_status', 'Requested')
+            ->findOrFail($validated['event_vendor_id']);
 
         VendorConfirmation::create([
             'event_vendor_id' => $eventVendor->id,
@@ -152,37 +178,9 @@ class VendorConfirmationController extends Controller
         ]);
 
         return redirect()
-            ->route('vendor-confirmations.index')
-            ->with(
-                'success',
-                'Jawaban ketersediaan berhasil disimpan.'
-            );
-    }
-
-    /**
-     * Riwayat konfirmasi tidak dapat diedit.
-     * Jawaban baru harus disimpan sebagai catatan baru.
-     */
-    public function edit(
-        Request $request,
-        VendorConfirmation $vendorConfirmation
-    ) {
-        abort(
-            403,
-            'Riwayat konfirmasi tidak dapat diedit. Jawaban baru harus dibuat sebagai catatan terpisah.'
-        );
-    }
-
-    /**
-     * Riwayat konfirmasi tidak dapat ditimpa.
-     */
-    public function update(
-        Request $request,
-        VendorConfirmation $vendorConfirmation
-    ) {
-        abort(
-            403,
-            'Riwayat konfirmasi tidak dapat diperbarui agar catatan jawaban tetap terjaga.'
-        );
+            ->route('vendor-confirmations.index', [
+                'organization' => $organization->slug,
+            ])
+            ->with('success', 'Jawaban ketersediaan berhasil disimpan.');
     }
 }

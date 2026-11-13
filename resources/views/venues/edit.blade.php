@@ -119,7 +119,7 @@
         Perbarui informasi venue yang sudah tersimpan.
     </p>
 
-    <form action="{{ route('venues.update', $venue->id) }}" method="POST">
+    <form action="{{ route('venues.update', ['organization' => $currentOrganization->slug, 'venue' => $venue->id]) }}" method="POST">
         @csrf
         @method('PUT')
 
@@ -234,7 +234,7 @@
                 Simpan Perubahan
             </button>
 
-            <a href="{{ route('venues.index') }}" class="venue-back">
+            <a href="{{ route('venues.index', ['organization' => $currentOrganization->slug]) }}" class="venue-back">
                 Kembali
             </a>
         </div>

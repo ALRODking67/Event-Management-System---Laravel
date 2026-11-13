@@ -18,7 +18,10 @@
 
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 25px;">
 
-        <form action="{{ route('evaluations.store', $event->id) }}" method="POST">
+        <form action="{{ route('evaluations.store', [
+            'organization' => $organization->slug,
+            'event' => $event->id
+        ]) }}" method="POST">
             @csrf
 
             <div style="margin-bottom: 20px;">
@@ -40,13 +43,9 @@
                     Catatan Efektivitas
                 </label>
 
-                <textarea
-                    name="effectiveness_notes"
-                    id="effectiveness_notes"
-                    rows="4"
+                <textarea name="effectiveness_notes" id="effectiveness_notes" rows="4"
                     placeholder="Tuliskan hasil dan efektivitas pelaksanaan acara..."
-                    style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;"
-                >{{ old('effectiveness_notes') }}</textarea>
+                    style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">{{ old('effectiveness_notes') }}</textarea>
 
                 @error('effectiveness_notes')
                     <p style="color: #dc2626; font-size: 13px; margin-top: 5px;">{{ $message }}</p>
@@ -58,13 +57,9 @@
                     Kelebihan Acara
                 </label>
 
-                <textarea
-                    name="strengths"
-                    id="strengths"
-                    rows="4"
+                <textarea name="strengths" id="strengths" rows="4"
                     placeholder="Tuliskan hal-hal yang berjalan dengan baik..."
-                    style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;"
-                >{{ old('strengths') }}</textarea>
+                    style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">{{ old('strengths') }}</textarea>
 
                 @error('strengths')
                     <p style="color: #dc2626; font-size: 13px; margin-top: 5px;">{{ $message }}</p>
@@ -76,13 +71,9 @@
                     Hal yang Perlu Diperbaiki
                 </label>
 
-                <textarea
-                    name="improvements"
-                    id="improvements"
-                    rows="4"
+                <textarea name="improvements" id="improvements" rows="4"
                     placeholder="Tuliskan kekurangan dan saran perbaikan..."
-                    style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;"
-                >{{ old('improvements') }}</textarea>
+                    style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">{{ old('improvements') }}</textarea>
 
                 @error('improvements')
                     <p style="color: #dc2626; font-size: 13px; margin-top: 5px;">{{ $message }}</p>
@@ -90,17 +81,13 @@
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button
-                    type="submit"
-                    style="background: #2f65f6; color: white; padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer;"
-                >
+                <button type="submit"
+                    style="background: #2f65f6; color: white; padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer;">
                     Simpan Evaluasi
                 </button>
 
-                <a
-                    href="{{ route('evaluations.index') }}"
-                    style="background: #e2e8f0; color: #334155; padding: 10px 18px; border-radius: 6px; text-decoration: none;"
-                >
+                <a href="{{ route('evaluations.index', ['organization' => $organization->slug]) }}"
+                    style="background: #e2e8f0; color: #334155; padding: 10px 18px; border-radius: 6px; text-decoration: none;">
                     Kembali
                 </a>
             </div>

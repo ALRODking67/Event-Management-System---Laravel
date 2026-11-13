@@ -2,36 +2,56 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Organization;
 use App\Models\Event;
 use App\Models\Evaluation;
 use Illuminate\Http\Request;
 
 class EvaluationController extends Controller
 {
-    public function index()
+    /**
+     * Menampilkan evaluasi seluruh acara dalam organisasi aktif.
+     */
+    public function index(Organization $organization)
     {
-        $events = Event::with([
-            'evaluation',
-            'financialTransactions',
-        ])
+        $events = $organization->events()
+            ->with([
+                'evaluation',
+                'financialTransactions',
+            ])
             ->orderByDesc('start_datetime')
             ->get();
 
-        return view('evaluations.index', compact('events'));
+        return view(
+            'evaluations.index',
+            compact('organization', 'events')
+        );
     }
 
-    public function create(Event $event)
+    /**
+     * Menampilkan form pembuatan evaluasi.
+     */
+    public function create(Organization $organization, Event $event)
     {
         $event->load([
             'evaluation',
             'financialTransactions',
         ]);
 
-        return view('evaluations.create', compact('event'));
+        return view(
+            'evaluations.create',
+            compact('organization', 'event')
+        );
     }
 
-    public function store(Request $request, Event $event)
-    {
+    /**
+     * Menyimpan evaluasi acara.
+     */
+    public function store(
+        Request $request,
+        Organization $organization,
+        Event $event
+    ) {
         $validated = $request->validate([
             'effectiveness_notes' => ['nullable', 'string'],
             'strengths' => ['nullable', 'string'],
@@ -40,7 +60,9 @@ class EvaluationController extends Controller
 
         if ($event->evaluation()->exists()) {
             return redirect()
-                ->route('evaluations.index')
+                ->route('evaluations.index', [
+                    'organization' => $organization->slug,
+                ])
                 ->with('error', 'Evaluasi untuk acara ini sudah tersedia.');
         }
 
@@ -50,19 +72,35 @@ class EvaluationController extends Controller
         $event->evaluation()->create($validated);
 
         return redirect()
-            ->route('evaluations.index')
+            ->route('evaluations.index', [
+                'organization' => $organization->slug,
+            ])
             ->with('success', 'Evaluasi acara berhasil disimpan.');
     }
 
-    public function edit(Evaluation $evaluation)
-    {
+    /**
+     * Menampilkan form edit evaluasi.
+     */
+    public function edit(
+        Organization $organization,
+        Evaluation $evaluation
+    ) {
         $evaluation->load('event');
 
-        return view('evaluations.edit', compact('evaluation'));
+        return view(
+            'evaluations.edit',
+            compact('organization', 'evaluation')
+        );
     }
 
-    public function update(Request $request, Evaluation $evaluation)
-    {
+    /**
+     * Memperbarui evaluasi.
+     */
+    public function update(
+        Request $request,
+        Organization $organization,
+        Evaluation $evaluation
+    ) {
         $validated = $request->validate([
             'effectiveness_notes' => ['nullable', 'string'],
             'strengths' => ['nullable', 'string'],
@@ -75,7 +113,9 @@ class EvaluationController extends Controller
         $evaluation->update($validated);
 
         return redirect()
-            ->route('evaluations.index')
+            ->route('evaluations.index', [
+                'organization' => $organization->slug,
+            ])
             ->with('success', 'Evaluasi acara berhasil diperbarui.');
     }
 }
